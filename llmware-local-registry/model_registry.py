@@ -8,7 +8,6 @@
 
 
 import os 
-import sys
 
 from llmware.models import ModelCatalog
 from llmware.configs import LLMWareConfig
@@ -18,10 +17,22 @@ _local_model_catalog = "local_llmware_model_catalog.json"
 # Note: this will create the catalog if it does not exist
 def load_local_model_catalog(cat_dir=LLMWareConfig.get_model_repo_path(), cat_file=_local_model_catalog):
     mc = ModelCatalog()
+    if not os.path.exists(cat_dir):
+        os.makedirs(cat_dir)
     cat_path = os.path.join(cat_dir, cat_file)
     if not os.path.exists(cat_path):
+        # Create local catalog from built-in if it doesn't exist
         mc.save_model_registry(fp=cat_dir, fn=cat_file)
-    print("Using Model Catalog " + cat_path)
     mc.load_model_registry(fp=cat_dir, fn=cat_file)
     return mc
+
+def save_local_model_catalog(mc, cat_dir=LLMWareConfig.get_model_repo_path(), cat_file=_local_model_catalog, create_backup=True):
+    if not os.path.exists(cat_dir):
+        os.makedirs(cat_dir)
+
+    cat_path = os.path.join(cat_dir, cat_file)
+    if os.path.exists(cat_path) and create_backup:
+        os.rename(cat_path, cat_path + '.prev')
+
+    mc.save_model_registry(fp=cat_dir, fn=cat_file)
 

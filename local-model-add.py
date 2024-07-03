@@ -26,10 +26,11 @@ def ensure_model_directory(model_card, dry_run=False):
 
     if not dry_run:
         # create model card json
-        if os.path.exists(model_dir):
-            card_json_file = os.path.join(model_dir, "model_card.json")
-            with open(card_json_file, "w") as f:
-                json.dump(model_card, f)
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+        card_json_file = os.path.join(model_dir, "model_card.json")
+        with open(card_json_file, "w") as f:
+            json.dump(model_card, f)
 
 def delete_existing_model(mc, card_names):
     models = mc.global_model_list
@@ -38,17 +39,24 @@ def delete_existing_model(mc, card_names):
            model["display_name"] in card_names :
             mc.delete_model_card(model["model_name"])
 
-def load_local_model_catalog(cat_dir=LLMWareConfig.get_model_repo_path(), cat_file=_local_model_catalog,create_backup=True):
+def load_local_model_catalog(cat_dir=LLMWareConfig.get_model_repo_path(), cat_file=_local_model_catalog):
     mc = ModelCatalog()
     cat_path = os.path.join(cat_dir, cat_file)
     if os.path.exists(cat_path):
         mc.load_model_registry(fp=cat_dir, fn=cat_file)
-        if create_backup:
-            bak_file = cat_file + '.prev'
-            mc.save_model_registry(fp=cat_dir, fn=bak_file)
     else:
         print("Catalog does not exist: " + cat_path)
     return mc
+
+def save_local_model_catalog(mc, cat_dir=LLMWareConfig.get_model_repo_path(), cat_file=_local_model_catalog,create_backup=True):
+    if not os.path.exists(cat_dir):
+        os.makedirs(cat_dir)
+
+    cat_path = os.path.join(cat_dir, cat_file)
+    if os.path.exists(cat_path) and create_backup:
+        os.rename(cat_path, cat_path + '.prev'
+
+    mc.save_model_registry(fp=cat_dir, fn=cat_file)
 
 def read_model_config(args_path, args):
     path = args.model_config
@@ -321,4 +329,4 @@ if __name__ == "__main__":
     ensure_model_directory(model_card, args.dry_run)
 
     if not args.dry_run:
-        print("TODO: SAVE")
+        save_local_model_catalog(mc, cat_dir, cat_file, args.backup)
