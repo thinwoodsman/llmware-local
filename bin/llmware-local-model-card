@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+#from llmware.models import ModelCatalog
+#from llmware.configs import LLMWareConfig
+import os
+import sys
+
+from llmware.prompts import Prompt
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from llmware_local.registry import load_local_model_catalog, local_model_catalog
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: download_from_model_catalog.py MODEL [MODEL [...]]")
+        sys.exit(1)
+    mc = load_local_model_catalog()
+
+    for model_name in sys.argv[1:]:
+        model_card = mc.lookup_model_card(model_name)
+        if (model_card):
+            print(model_card)
+        else:
+            print("Model not found in catalog. Skipping.")
