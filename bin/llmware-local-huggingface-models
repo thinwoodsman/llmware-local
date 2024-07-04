@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+import os
+import sys
+from pathlib import Path
+import difflib
+
+from llmware.prompts import Prompt
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from llmware_local.registry import load_local_model_catalog, local_model_catalog
+
+
+if __name__ == "__main__":
+    mc = load_local_model_catalog()
+
+    in_catalog = { }
+    missing = [ ]
+    # probably should use huggingfave module to get this so the code is not
+    # limited to Linux
+    hf_hub_dir = os.path.join(Path.home(), '.cache', 'huggingface', 'hub') 
+    for entry in os.listdir(hf_hub_dir):
+        if not os.path.isdir( os.path.join(hf_hub_dir, entry) ):
+            continue
+        if not entry.startswith('models--'):
+            continue
+        arr = entry.split('--', maxsplit=3)
+        if len(arr) == 2:
+            hf_name = arr[1]
+        else:
+            hf_name = "/".join((arr[1], arr[2]))
+        #print(hf_name)
+        model_card = mc.lookup_model_card(hf_name)
+        if model_card:
+            in_catalog[hf_name] = model_card
+        else:
+            missing.append(hf_name)
+
+    print("LLMWare model cards for Local HuggingFace models:")
+    for model in sorted(in_catalog.keys()):
+        card = in_catalog[model]
+        print("  " + model)
+        for k,v in card.items():
+            print("    %s:\t%s" % (k, v))
+
+    print("Local HuggingFace models not in LLMWare catalog:")
+    cat_models = [m['model_name'] for m in mc.list_all_models()]
+    for model in sorted(missing):
+        closest = difflib.get_close_matches(model, cat_models)
+        sugg = ""
+        if len(closest) > 0:
+            sugg = "\t(similar: " + " ".join(closest) + ")"
+
+        print("  " + model + sugg )
+
